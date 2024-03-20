@@ -1,1 +1,1 @@
-from .reader import Paper
+from .reader import Paper, Reader

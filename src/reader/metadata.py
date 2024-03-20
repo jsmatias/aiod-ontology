@@ -1,6 +1,9 @@
 import re
 import requests
+from ratelimit import limits, sleep_and_retry
+
 from config import Config
+
 
 empty_metadata = {
     "title": "",
@@ -25,6 +28,9 @@ class Metadata:
         self.headers = config.get_metadata_api_headers()
         self.silent = silent
 
+    @sleep_and_retry
+    @limits(calls=10, period=60)
+    @limits(calls=1, period=1)
     def get_metadata_from_doi(self, doi: str) -> dict[str, str]:
         """`GET` method to fetch the metadata from the DOI of the paper"""
         url = self.api_url_base + doi

@@ -1,6 +1,5 @@
 import re
 import fitz
-import numpy as np
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 from utils.utils import extract_doi_from_str
@@ -31,16 +30,18 @@ class Paper:
                 on the filename.
             from_filename: When set to `True` the method will try to find the doi pattern in the filename.
         """
+        assert file_name.split(".")[-1].lower() == "pdf", "Only PDF files are accepted."
+
         self.filename_has_doi = filename_has_doi
         self.pattern_to_replace = pattern_to_replace
 
         self.silent = silent
         self.file_name = file_name
         self.doi = self._get_doi_from_file_name() if filename_has_doi else ""
-        self.full_path = files_path / self.file_name
+        self.full_path = str(files_path / self.file_name)
 
         self._pdf_info = [{}]
-        self._raw_text = ""
+        self._raw_text = []
         self.text = ""
 
         self.title = ""
@@ -80,7 +81,7 @@ class Paper:
         pattern_end = r"(?=(?:\bccs concepts\b|\bkeywords\b|\bacm reference format\b|\bintroduction\b))"
         full_pattern = pattern_start + r"([\S\s]*?)" + pattern_end
 
-        text = self._raw_text.replace("-\n", "")
+        text = "\n".join(self._raw_text[:2]).replace("-\n", "")
         text = re.sub(r"\n+", " ", text)
         text = re.sub(r" {2,3}", " ", text)
         text = text.lower().strip()
@@ -93,68 +94,38 @@ class Paper:
         self.abstract = abstract_groups[0].strip()
 
     def _extract_keywords_from_pdf_content(self):
-        r"""Tries to extract keywords from the text.
-        It assumes that the pattern is a list of words after the flag 'keywords' or 'key words'
-        separated by any non-word character, excluding "\s" and "-".
-        Full pattern:
-          "(?:Keywords|Key words)[:\s]((?:(?:\w+(?:[-\s]\w+){,3})){1,6}(?:\w+(?:[-\s]\w+){0,3})(?:[^\s,\w]|\n\w+[^ \w]))"
-        Ex.: keywords: test-word1, test-word2 word1, word2, last composed.
-        """
-        text = self._raw_text.replace("-\n", "")
-        text = re.sub(r" {2,3}", " ", text)
-        text = re.sub(r"\n{2,}", "\n", text)
-        text = re.sub(r"(?<=[^ \w])\s|\s(?=[^ \w])", "", text)
-        text = text.lower().strip()
-        
-        min_characters = 2
-        min_words = 1
-        max_words = 4
-
-        min_keywords = 1
-        max_keywords = 7
-
-        start_pattern = r"(?:keywords|key words)[:\s]"
-        # keyword_pattern = rf"\w+(?:[-\s]\w+){{{min_words-1},{max_words-1}}}"
-        keyword_pattern = rf"(?:[\s]?[\w-]{{{min_characters},}}){{{min_words},{max_words}}}"
-        separator_pattern = r"[^\s\w-]"  # e.g. ",", ";", "|", etc.
-        separator = re.findall(
-            rf"{start_pattern}{keyword_pattern}({separator_pattern})", text
-        )
-        if separator:
-            # separator must have just one element
-            separator = separator[0]
-        else:
-            keywords_list = []
-            return keywords_list
-
-        keyword_sep_pattern = f"{keyword_pattern}{separator}"
-        end_pattern = rf"(?=[^\s\w{separator}]|\n\w+[^ \w])"  # full stop or a word wrapped around \n
-
-        keywords_group_pattern = f"(?:{keyword_sep_pattern}){{{min_keywords},{max_keywords-1}}}(?:{keyword_pattern})"
-        keywords_match_pattern = (
-            rf"{start_pattern}({keywords_group_pattern}{end_pattern})"
-        )
-        print(keywords_match_pattern)
+        text = "\n".join(self._raw_text[:2])
+        start_pattern = r"(?:Key words and Phrases|KEYWORDS|Key words|Index Terms)[-—\s:]"
+        keyword_pattern = r"(.*?)"
+        end_pattern = r"(?:[1I]\.?[ \n]Introduction|Introduction|ACM|(?:\w+[ -]){4})"
+        keywords_match_pattern = rf"(?si){start_pattern}{keyword_pattern}{end_pattern}"
 
         keywords_group = re.findall(keywords_match_pattern, text)
         if not keywords_group:
-            return self.keywords or []
+            self.keywords = []
+            return
         keywords_string = keywords_group[0]
 
+        separator_pattern = r"[^\s\w-]"  # e.g. ",", ";", "|", etc.
+        separator = re.findall(separator_pattern, keywords_string)
+
+        if separator:
+            separator = separator[0]
+        else:
+            self.keywords = []
+            return
+
         keywords_list = [
-            keyword.strip().replace("\n", " ")
+            keyword.strip().replace("\n", " ").lower()
             for keyword in keywords_string.split(separator)
         ]
 
-        if keywords_list and (keywords_list[-1] in ["acm reference format"]):
-            del keywords_list[-1]
-
         if self.keywords and (self.keywords != keywords_list):
             print(
-                "Keywords found from the metadata of the pdf differs from the ones found in the text."
+                f"Keywords found from the metadata ({self.keywords}) of the pdf differs from the ones found in the text: {keywords_list}"
             )
 
-        self.keywords = [keyword.strip().lower() for keyword in keywords_list]
+        self.keywords = keywords_list
 
     def _extract_keywords_from_pdf_metadata(self):
         """Search for keywords in the pdf metadata"""
@@ -166,21 +137,32 @@ class Paper:
         if isinstance(keywords_str, bytes):
             keywords_str = str(keywords_str, encoding="utf-8")
         keywords_list = re.split(r"[^\s\w-]", keywords_str)
+        while "" in keywords_list:
+            keywords_list.pop(keywords_list.index(""))
         self.keywords = [keyword.strip().lower() for keyword in keywords_list]
 
     def extract_keywords(self):
         if self.keywords and self.keywords[0]:
             return
-        self._extract_keywords_from_pdf_metadata()
+        try:
+            self._extract_keywords_from_pdf_metadata()
+        except Exception:
+            self.keywords = []
         if self.keywords and self.keywords[0]:
             return
-        self._extract_keywords_from_pdf_content()
+        try:
+            self._extract_keywords_from_pdf_content()
+        except Exception:
+            self.keywords = []
 
     def load(self):
         """Loads the PDF content and extracts keywords and abstract from file."""
         self.extract_pdf_info()
         self.extract_pdf_text()
-        self._extract_abstract()
+        try:
+            self._extract_abstract()
+        except Exception:
+            pass
         self.extract_keywords()
         self.clean_text()
 
@@ -193,12 +175,12 @@ class Paper:
         if publisher != "acm":
             raise Exception("This paper's publisher is not ACM!")
 
-        topics = acm.get_classification_from_doi(self.doi)[1:]
+        topics = acm.get_classification_from_doi(self.doi)
         if topics and (topics[0].strip().lower() != self.title.lower().strip()):
             msg = f"The title in the topics extracted from '{publisher}' didn't match with '{self.title}'"
             raise Exception(msg)
 
-        self.topics["acm"] = topics
+        self.topics["acm"] = topics[1:]
 
     def extract_dbpedia_topics(self):
         if not self.abstract:
@@ -236,8 +218,36 @@ class Paper:
         else:
             raise Exception(f"DOI for this paper ({self.file_name}) not set.")
 
-    def export_to_dict(self):
-        pass
+    def import_from_dict(self, paper: dict):
+        for k, v in paper.items():
+            setattr(self, k, v)
+
+    def export_to_dict(self) -> dict:
+        metadata = {
+            key: self.__dict__[key]
+            for key in [
+                "filename_has_doi",
+                "pattern_to_replace",
+                "silent",
+                "file_name",
+                "doi",
+                "full_path",
+                "title",
+                "author",
+                "abstract",
+                "issn",
+                "url",
+                "number",
+                "journal",
+                "publisher",
+                "year",
+                "month",
+                "pages",
+                "keywords",
+                "topics",
+            ]
+        }
+        return metadata
 
     def export_to_klink_input(self):
         pass
@@ -256,7 +266,7 @@ class Paper:
         """Remove punctuation and special characters from the text"""
 
         # join words that are separated at the end of the line: e.g. dis-\parate
-        text = self._raw_text.replace("-\n", "\n")
+        text = "\n".join(self._raw_text).replace("-\n", "\n")
         # remove line breaks
         text = text.replace(r"\n", " ")
         text = re.sub(r"\s\s", " ", text)
@@ -280,10 +290,10 @@ class Paper:
         Extract the text from the pdf file.
         """
         doc = fitz.open(self.full_path)
-        text = ""
+        pages = []
         for page in doc:
-            text += page.get_text()
-        self._raw_text = text
+            pages += [page.get_text()]
+        self._raw_text = pages
 
     def extract_doi(self) -> str:
         """Extracts DOI"""
@@ -299,6 +309,7 @@ class Paper:
         if not doi_list:
             doi_list = extract_doi_from_str(str(self._pdf_info))
         if not doi_list:
-            doi_list = extract_doi_from_str(self._raw_text)
+            first_pages = "\n".join(self._raw_text[0:2])
+            doi_list = extract_doi_from_str(first_pages)
 
         self.doi = doi_list[0] if doi_list else ""
