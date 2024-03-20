@@ -102,19 +102,19 @@ class Reader:
 
         papers_details = []
         for paper in self.paper_list:
-            papers_details.append(
-                {
-                    "file_name": paper.file_name,
-                    "doi": paper.doi,
-                    "title": paper.title,
-                    "authors": ";".join(paper.author),
-                    "journal": paper.journal,
-                    "publisher": paper.publisher,
-                    "year": paper.year,
-                    "keywords": ";".join(paper.keywords),
-                    "topics": ";".join(paper.topics),
-                }
-            )
+            paper_data = {
+                "file_name": paper.file_name,
+                "doi": paper.doi,
+                "title": paper.title,
+                "authors": ";".join(paper.author),
+                "journal": paper.journal,
+                "publisher": paper.publisher,
+                "year": paper.year,
+                "keywords": ";".join(paper.keywords),
+            }
+            for key in paper.topics:
+                paper_data[f"topics_{key}"] = ";".join(paper.topics[key])
+            papers_details.append(paper_data)
 
         if format == "dict":
             return papers_details
