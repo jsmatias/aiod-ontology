@@ -77,9 +77,9 @@ class Paper:
 
     def _extract_abstract(self):
         """Tries to extract the abstract from the pdf content."""
-        pattern_start = r"(?:\babstract\b)"
-        pattern_end = r"(?=(?:\bccs concepts\b|\bkeywords\b|\bacm reference format\b|\bintroduction\b))"
-        full_pattern = pattern_start + r"([\S\s]*?)" + pattern_end
+        pattern_start = r"(?:Abstract[^]])[-— ]?"
+        pattern_end = r"(?:Index Terms|Categories and Subject|Keywords|Key words|CCS Concepts|ACM Reference Format)"
+        full_pattern = "(?si)" + pattern_start + "(.*?)" + pattern_end
 
         text = "\n".join(self._raw_text[:2]).replace("-\n", "")
         text = re.sub(r"\n+", " ", text)
