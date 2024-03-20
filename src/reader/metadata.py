@@ -30,7 +30,7 @@ class Metadata:
 
     @sleep_and_retry
     @limits(calls=10, period=60)
-    @limits(calls=1, period=1)
+    @limits(calls=1, period=2)
     def get_metadata_from_doi(self, doi: str) -> dict[str, str]:
         """`GET` method to fetch the metadata from the DOI of the paper"""
         url = self.api_url_base + doi

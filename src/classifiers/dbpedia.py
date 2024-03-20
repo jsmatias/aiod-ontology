@@ -5,7 +5,7 @@ from ratelimit import limits, sleep_and_retry
 
 @sleep_and_retry
 @limits(calls=10, period=60)
-@limits(calls=1, period=1)
+@limits(calls=1, period=2)
 def get_classification_from_text(text: str, kwargs: dict = {}) -> dict:
     kwargs["text"] = text
     base_url = "https://api.dbpedia-spotlight.org/en/annotate?"

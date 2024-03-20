@@ -13,7 +13,8 @@ from config import PAPERS_PATH, DATA_PATH
 class Reader:
     def __init__(self) -> None:
         self.files_path = PAPERS_PATH
-        self.cache_path = DATA_PATH / "reader" / "cache" / "papers.json"
+        self.cache_path = DATA_PATH / "reader" / "cache"
+        self.cache_file = ""
         self.paper_list: list[Paper] = []
         self.cache: dict[str, dict] = {}
         self.dois_not_cached: list[str] = []
@@ -34,6 +35,7 @@ class Reader:
         self.paper_list = []
 
     def load(self, named_list: str, filename_has_doi: bool = True, pattern_to_replace: dict = {}):
+        self.cache_file = named_list + ".json"
         self.load_cache()
 
         papers_paths = glob(str(self.files_path / named_list / "*.pdf"))
@@ -52,8 +54,9 @@ class Reader:
         return len(self.paper_list) - 1
 
     def load_cache(self):
-        if Path.is_file(self.cache_path):
-            with open(self.cache_path, "r") as f:
+        cache_file_path = self.cache_path / self.cache_file
+        if Path.is_file(cache_file_path):
+            with open(cache_file_path, "r") as f:
                 self.cache = json.load(f)
 
     def clean_cache(self):
@@ -61,8 +64,7 @@ class Reader:
 
     def dump(self):
         cache = {paper.doi: paper.export_to_dict() for paper in self.paper_list}
-
-        with open(self.cache_path, "w") as f:
+        with open(self.cache_path / self.cache_file, "w") as f:
             json.dump(cache, f)
 
     def extract_metadata(self):

@@ -5,7 +5,7 @@ from ratelimit import limits, sleep_and_retry
 
 @sleep_and_retry
 @limits(calls=10, period=60)
-@limits(calls=1, period=1)
+@limits(calls=1, period=2)
 def get_classification_from_doi(doi: str) -> list:
     classification = []
     url = f"https://dl.acm.org/doi/{doi}"
