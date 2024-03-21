@@ -94,6 +94,25 @@ class Reader:
                     case _:
                         raise Exception("Not implemented.")
 
+    def export_as_klink_input(self):
+
+        cols_dict = {
+            "keywords": "DE",
+            "title": "TI",
+            "authors": "AU",
+            "publisher": "SO",
+            "topics_acm": "SC",
+            "year": "PY",
+        }
+        data_to_export = self.get_metadata("dataframe").fillna("")
+        mask = (data_to_export["keywords"] != "") & (data_to_export["topics_acm"] != "")
+        data_to_export = data_to_export[mask]
+        data_to_export.rename(columns=cols_dict, inplace=True)
+
+        data_to_export = data_to_export[list(cols_dict.values())]
+        data_to_export.to_csv(DATA_PATH / "klink2" / "input" / "ac2012.tsv", sep="\t", index=False)
+        return data_to_export
+
     def get_metadata(self, format: str = "dict") -> list[dict] | pd.DataFrame:
         """
         Args:

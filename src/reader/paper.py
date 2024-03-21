@@ -195,7 +195,7 @@ class Paper:
         except Exception as exc:
             raise exc
 
-    def get_metadata(self):
+    def get_metadata(self) -> dict:
         """Gets the metadata from external source via API."""
         if self.doi:
             metadata = Metadata().get_metadata_from_doi(self.doi)
@@ -248,9 +248,6 @@ class Paper:
             ]
         }
         return metadata
-
-    def export_to_klink_input(self):
-        pass
 
     def cross_validate_doi(self, metadata: dict) -> bool:
         """Check if title from metadata is in the text"""
