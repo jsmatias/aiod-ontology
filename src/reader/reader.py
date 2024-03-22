@@ -11,10 +11,11 @@ from config import PAPERS_PATH, DATA_PATH
 
 
 class Reader:
-    def __init__(self) -> None:
+    def __init__(self, named_list: str) -> None:
+        self.named_list = named_list
+        self.cache_file = named_list + ".json"
         self.files_path = PAPERS_PATH
         self.cache_path = DATA_PATH / "reader" / "cache"
-        self.cache_file = ""
         self.paper_list: list[Paper] = []
         self.cache: dict[str, dict] = {}
         self.dois_not_cached: list[str] = []
@@ -34,23 +35,21 @@ class Reader:
     def reset(self):
         self.paper_list = []
 
-    def load(self, named_list: str, filename_has_doi: bool = True, pattern_to_replace: dict = {}):
-        self.cache_file = named_list + ".json"
+    def load(self, filename_has_doi: bool = True, pattern_to_replace: dict = {}, from_inc: int | None = None, to_exc: int | None = None):
+
         self.load_cache()
 
-        papers_paths = glob(str(self.files_path / named_list / "*.pdf"))
+        papers_paths = glob(str(self.files_path / self.named_list / "*.pdf"))[from_inc: to_exc]
         pbar = tqdm(papers_paths)
         for paper_path in pbar:
             paper_name = paper_path.split("/")[-1]
             pbar.set_description(f"Processing {paper_name}")
-            self._load_paper_and_import_from_cache(named_list, paper_name, filename_has_doi, pattern_to_replace)
-        self.clean_cache()
+            self._load_paper_and_import_from_cache(self.named_list, paper_name, filename_has_doi, pattern_to_replace)
 
     def load_single_paper(self, dir: str, file_name: str, filename_has_doi: bool = True, pattern_to_replace: dict = {}) -> int:
 
         self.load_cache()
         self._load_paper_and_import_from_cache(dir, file_name, filename_has_doi, pattern_to_replace)
-        self.clean_cache()
         return len(self.paper_list) - 1
 
     def load_cache(self):
@@ -62,10 +61,13 @@ class Reader:
     def clean_cache(self):
         self.cache = {}
 
-    def dump(self):
-        cache = {paper.doi: paper.export_to_dict() for paper in self.paper_list}
+    def dump(self, overwrite: bool = False):
+        if overwrite:
+            self.clean_cache()
+        for paper in self.paper_list:
+            self.cache[paper.doi] = paper.export_to_dict()
         with open(self.cache_path / self.cache_file, "w") as f:
-            json.dump(cache, f)
+            json.dump(self.cache, f)
 
     def extract_metadata(self):
         if not self.paper_list:
@@ -94,23 +96,23 @@ class Reader:
                     case _:
                         raise Exception("Not implemented.")
 
-    def export_as_klink_input(self):
-
+    def export_as_klink_input(self, classification_source):
+        topics_src = f"topics_{classification_source}"
         cols_dict = {
             "keywords": "DE",
             "title": "TI",
             "authors": "AU",
             "publisher": "SO",
-            "topics_acm": "SC",
+            topics_src: "SC",
             "year": "PY",
         }
         data_to_export = self.get_metadata("dataframe").fillna("")
-        mask = (data_to_export["keywords"] != "") & (data_to_export["topics_acm"] != "")
+        mask = (data_to_export["keywords"] != "") & (data_to_export[topics_src] != "")
         data_to_export = data_to_export[mask]
         data_to_export.rename(columns=cols_dict, inplace=True)
 
         data_to_export = data_to_export[list(cols_dict.values())]
-        data_to_export.to_csv(DATA_PATH / "klink2" / "input" / "ac2012.tsv", sep="\t", index=False)
+        data_to_export.to_csv(DATA_PATH / "klink2" / f"{self.named_list}.tsv", sep="\t", index=False)
         return data_to_export
 
     def get_metadata(self, format: str = "dict") -> list[dict] | pd.DataFrame:

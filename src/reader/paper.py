@@ -116,7 +116,7 @@ class Paper:
             return
 
         keywords_list = [
-            keyword.strip().replace("\n", " ").lower()
+            keyword.strip().replace("-\n", "").replace("\n", "").lower()
             for keyword in keywords_string.split(separator)
         ]
 
@@ -187,11 +187,13 @@ class Paper:
             self.topics["dbpedia"] = []
         try:
             res_dict = dbpedia.get_classification_from_text(self.abstract)
-            self.topics["dbpedia"] = (
+            topics = (
                 [resource["@surfaceForm"] for resource in res_dict["Resources"]]
                 if res_dict["Resources"]
                 else []
             )
+            self.topics["dbpedia"] = list(set(topics))
+
         except Exception as exc:
             raise exc
 

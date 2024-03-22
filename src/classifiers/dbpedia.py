@@ -16,6 +16,4 @@ def get_classification_from_text(text: str, kwargs: dict = {}) -> dict:
     res = requests.get(url, headers=header)
     res.raise_for_status()
 
-    topics = list(set(res.json()))
-
-    return topics
+    return res.json()

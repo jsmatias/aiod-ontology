@@ -7,6 +7,7 @@ library(fastcluster)
 library(dplyr)
 Rcpp::sourceCpp('utils.cpp')
 
+data_dir <- "../../data/klink2/"
 # Var naming here:
 # r - relation, string
 # k, x, y - keywords, string
@@ -416,8 +417,9 @@ save.semrel <- function() {
     }
 }
 
-klink2 <- function(inputfile, export=FALSE) {
+klink2 <- function(input_file_name, export=FALSE) {
     # ensure correctness of global variables
+    inputfile <- paste(data_dir, input_file_name, ".Rdata", sep = "")
     prepare.globals(inputfile)
 
     # split_merge <- TRUE
@@ -455,10 +457,10 @@ klink2 <- function(inputfile, export=FALSE) {
     rm('reldb_df', 'reldb_l', 'keywordsdb', 'inputm', envir=globalenv())
     output.stats()
     
-    if (export) export_triples()
+    if (export) export_triples(input_file_name)
 }
 
-export_triples <- function() {
+export_triples <- function(output_file_name) {
   df_to_export <- triples %>%
     mutate(
       relation = case_when(
@@ -469,7 +471,13 @@ export_triples <- function() {
         TRUE ~ as.character(relation)  # Keep other values as is
       )
     )
-  write.table(df_to_export, "../../data/klink2/output/triples.csv", sep=";", row.names = FALSE, quote = FALSE)
+  write.table(
+    df_to_export, 
+    paste(data_dir, output_file_name, "_triples.csv", sep = ""), 
+    sep=";", 
+    row.names = FALSE, 
+    quote = FALSE
+  )
 }
 
 output.keywords <- function() {
