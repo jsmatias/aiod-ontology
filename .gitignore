@@ -1,5 +1,11 @@
 # Project especific files
-data/
+data/cso/*
+data/data/*
+data/klink2/*
+data/ontology/*
+data/reader/cache/*
+!.gitkeep
+
 
 # MacOs
 .DS_Store
@@ -19,6 +25,7 @@ venv/
 # Jupyter
 *.ipynb
 .ipynb_checkpoints/
+!main.ipynb
 
 # R
 *.Rdata
