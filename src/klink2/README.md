@@ -1,3 +1,5 @@
+# KLINK - 2
+
 ## Usage
 
 1. Process data into input.Rdata with input.R or similar tool. The output is Rdata file that contains objects with pre-processed input data.
@@ -12,3 +14,7 @@ klink2('input.Rdata')
 ```
 
 triples object will contain output semantic relations.
+
+
+## Credits
+Adapted from [yorugac/klink2](https://github.com/yorugac/klink2)
