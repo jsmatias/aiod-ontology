@@ -22,7 +22,7 @@ inputm <- matrix(, nrow = m, ncol = 0)
 # limit - read only limited number of articles
 # NOTE: on full data set can take up to 2 hours
 read_dataset <- function(limit = -1, named_list) {
-  file_name <- paste(data_dir, named_list, ".tsv", sep = "")
+  file_name <- paste(data_dir, named_list, "/", named_list, ".tsv", sep = "")
   d <- read.csv(
     file_name,
     sep = "\t", header = TRUE,
@@ -152,9 +152,9 @@ run_all <- function(limit = -1, named_list) {
   read_dataset(limit, named_list)
   inputm <<- cache_cooccurrence()
   if (limit > 0) {
-    fname <- paste(data_dir, named_list, limit, ".Rdata", sep = "")
+    fname <- paste(data_dir, named_list, "/", named_list, limit, ".Rdata", sep = "")
   } else {
-    fname <- paste(data_dir, named_list, ".Rdata", sep = "")
+    fname <- paste(data_dir, named_list, "/", named_list, ".Rdata", sep = "")
   }
   save("reldb_df", "reldb_l", "keywordsdb", "inputm", file = fname)
   cat("Input variables saved to", fname, "\n")
@@ -164,7 +164,7 @@ run_all <- function(limit = -1, named_list) {
 # prints main information about input variables
 # filename must contain input variables
 inspect_dataset <- function(filename) {
-  file_name <- paste(data_dir, filename, ".Rdata", sep = "")
+  file_name <- paste(data_dir, filename, "/", filename, ".Rdata", sep = "")
   load(file_name)
   n <- length(reldb_df)
   entrange <- entities_range(reldb_l)

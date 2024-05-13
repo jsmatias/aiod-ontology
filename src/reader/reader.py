@@ -229,8 +229,13 @@ class Reader:
         data_to_export.rename(columns=cols_dict, inplace=True)
 
         data_to_export = data_to_export[list(cols_dict.values())]
+
+        dir_path = DATA_PATH / "klink2" / self.named_list
+        if not dir_path.is_dir():
+            Path.mkdir(dir_path)
+
         data_to_export.to_csv(
-            DATA_PATH / "klink2" / f"{self.named_list}.tsv", sep="\t", index=False
+            dir_path / f"{self.named_list}.tsv", sep="\t", index=False
         )
         return data_to_export
 

@@ -21,9 +21,26 @@ PREDICATE_DICT = {
 
 
 def export_ontology(named_list: str):
+    """
+    Export ontology from a named list.
+
+    Args:
+        named_list (str): Name of the list.
+
+    Raises:
+        Exception: If the triples file is not found.
+
+    Prints:
+        str: Confirmation message with the exported file path.
+    """
     body = "\n"
 
-    with open(DATA_PATH / "klink2" / f"{named_list}_triples.csv", "r") as f:
+    triples_path = DATA_PATH / "klink2" / f"{named_list}_triples.csv"
+    if not triples_path.is_file():
+        raise Exception(
+            f"File {triples_path} not found. Make sure the triples were generated and saved correctly."
+        )
+    with open(triples_path, "r") as f:
         lines = f.readlines()
     i = 1
     for line in lines[1:]:
@@ -42,7 +59,8 @@ def export_ontology(named_list: str):
         i += 1
     ontology_str = HEADER + body
 
-    with open(DATA_PATH / "ontology" / f"{named_list}.ttl", "w") as f:
+    ontology_file_path = DATA_PATH / "ontology" / f"{named_list}.ttl"
+    with open(ontology_file_path, "w") as f:
         f.write(ontology_str)
 
-    print(f"File exported to {DATA_PATH / 'ontology' / named_list}.ttl")
+    print(f"File exported to {ontology_file_path}")
