@@ -180,7 +180,10 @@ class Paper:
 
         topics = acm.get_classification_from_doi(self.doi)
         if topics and (topics[0].strip().lower() != self.title.lower().strip()):
-            msg = f"The title in the topics extracted from ACM didn't match with '{self.title}'"
+            msg = (
+                f"The title '{topics[0]}' in the topics extracted from ACM didn't match with '{self.title}'."
+                "Ignoring this classification."
+            )
             raise WrongPaperError(msg)
 
         self.topics["acm"] = topics[1:]
