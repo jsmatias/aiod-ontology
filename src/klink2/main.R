@@ -6,6 +6,6 @@ file_name <- args[1]
 source("input.R")
 source("klink-2.R")
 
-run_all(file_name)
+run_all(named_list = file_name)
 klink2(file_name)
 export_triples(file_name)

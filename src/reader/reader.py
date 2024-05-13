@@ -144,7 +144,8 @@ class Reader:
         Dump cache to a json file.
 
         Args:
-            overwrite (bool): Overwrite cache.
+            overwrite (bool, optional): Deletes everything that was previously in the cache.
+                Otherwise it will update it. Default is false.
         """
         if overwrite:
             self.clean_cache()
@@ -178,15 +179,18 @@ class Reader:
                     case "acm":
                         try:
                             paper.extract_acm_topics()
-                        except Exception:
-                            pass
+                        except Exception as err:
+                            print(f"{paper.doi}: {err}")
                     case "dbpedia":
                         try:
                             paper.extract_dbpedia_topics()
-                        except Exception:
-                            pass
+                        except Exception as err:
+                            print(f"{paper.doi}: {err}")
+
                     case _:
-                        raise Exception("Not implemented.")
+                        raise Exception(
+                            f"Classification from '{source}' is not implemented."
+                        )
 
     def export_as_klink_input(self, classification_source) -> pd.DataFrame:
         """

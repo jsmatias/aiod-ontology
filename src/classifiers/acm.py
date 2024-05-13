@@ -9,16 +9,17 @@ from ratelimit import limits, sleep_and_retry
 def get_classification_from_doi(doi: str) -> list:
     classification = []
     url = f"https://dl.acm.org/doi/{doi}"
-    try:
-        res = requests.get(url, timeout=30)
-    except ConnectionError as err:
-        print(err)
-        return classification
+
+    res = requests.get(url, timeout=30)
+    res.raise_for_status()
+
     soup = BeautifulSoup(res.text, "html.parser")
     kw_tree_elements = soup.find_all("ol", class_="rlist organizational-chart")
 
     if kw_tree_elements:
-        root = kw_tree_elements[0].find("h6")
+        root = kw_tree_elements[0].find("div", {"id": "organizational-chart__title"})
+        if not root:
+            raise Exception("Title not found!")
         classification.append(root.text)
 
         keywords = kw_tree_elements[0].find_all("p")

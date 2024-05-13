@@ -5,10 +5,11 @@ from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 from utils.utils import extract_doi_from_str
 
+from .metadata import Metadata
 from classifiers import dbpedia
 from classifiers import acm
 from downloader import name_encode_decode
-from .metadata import Metadata
+from utils.errors import MissingDOIError, WrongPaperError
 
 
 class Paper:
@@ -175,16 +176,12 @@ class Paper:
     def extract_acm_topics(self):
         """Gets the topics from ACM classification."""
         if not self.doi:
-            raise Exception("DOI not set!")
-
-        publisher = self.publisher.lower().strip()
-        if publisher != "acm":
-            raise Exception("This paper's publisher is not ACM!")
+            raise MissingDOIError("DOI not set!")
 
         topics = acm.get_classification_from_doi(self.doi)
         if topics and (topics[0].strip().lower() != self.title.lower().strip()):
-            msg = f"The title in the topics extracted from '{publisher}' didn't match with '{self.title}'"
-            raise Exception(msg)
+            msg = f"The title in the topics extracted from ACM didn't match with '{self.title}'"
+            raise WrongPaperError(msg)
 
         self.topics["acm"] = topics[1:]
 
@@ -232,7 +229,11 @@ class Paper:
 
     def export_to_dict(self) -> dict:
         metadata = {
-            key: self.__dict__[key]
+            key: (
+                str(self.__dict__[key])
+                if isinstance(self.__dict__[key], Path)
+                else self.__dict__[key]
+            )
             for key in [
                 "filename_has_doi",
                 "pattern_to_replace",
