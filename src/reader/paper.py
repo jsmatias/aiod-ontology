@@ -78,7 +78,7 @@ class Paper:
             raise Exception("Multiple DOIs found.")
         if len(doi_list) == 0:
             raise Exception("No DOI found.")
-        return doi_list[0]
+        return doi_list[0].lower()
 
     def _extract_abstract(self):
         """Tries to extract the abstract from the pdf content."""

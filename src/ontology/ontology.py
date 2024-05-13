@@ -35,7 +35,7 @@ def export_ontology(named_list: str):
     """
     body = "\n"
 
-    triples_path = DATA_PATH / "klink2" / f"{named_list}_triples.csv"
+    triples_path = DATA_PATH / "klink2" / named_list / f"{named_list}_triples.csv"
     if not triples_path.is_file():
         raise Exception(
             f"File {triples_path} not found. Make sure the triples were generated and saved correctly."
