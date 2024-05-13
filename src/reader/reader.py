@@ -204,7 +204,7 @@ class Reader:
             present in the data.
         """
         topics_src = f"topics_{classification_source}"
-        data_to_export = self.get_metadata(data_format="dataframe").fillna("")
+        data_to_export = self.metadata_collection(data_format="dataframe").fillna("")
 
         if topics_src not in data_to_export.columns:
             msg = (
@@ -230,7 +230,7 @@ class Reader:
         )
         return data_to_export
 
-    def get_metadata(
+    def metadata_collection(
         self, data_format: Literal["dict", "dataframe"] = "dict"
     ) -> list[dict] | pd.DataFrame:
         """
@@ -263,10 +263,16 @@ class Reader:
             papers_df = pd.DataFrame(papers_details)
             return papers_df
         else:
-            raise TypeError("data_format must be 'dict' or 'dataframe'")
+            raise ValueError("data_format must be 'dict' or 'dataframe'")
 
-    def get_data(self, raw=False) -> list[dict]:
-        """"""
+    def content_collection(self, raw: bool = False) -> list[dict]:
+        """Get the text content of the papers.
+
+        Args:
+            raw (bool, option): If true the text content returned is the exact text with any processing. Default is False.
+
+        Return (list[dict]): The list of dictionaries with text content from the papers.
+        """
         papers_content = []
         for paper in self.paper_list:
             papers_content.append(
