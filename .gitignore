@@ -1,6 +1,7 @@
 # Project especific files
 data/cso/*
-data/data/*
+data/data/lists/*
+data/data/papers/*
 data/klink2/*
 data/ontology/*
 data/reader/cache/*
