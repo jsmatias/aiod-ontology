@@ -44,7 +44,7 @@ class Metadata:
 
         return metadata
 
-    def _to_dict(self, metadata: str):
+    def _to_dict(self, metadata: str) -> dict[str, str]:
         """Convert metadata do dictionary"""
 
         metadata_dict = {}
@@ -53,7 +53,8 @@ class Metadata:
         def search_field(field: str):
             field_pattern = f"{field}" + r"={(.*?)}"
             try:
-                result = re.search(field_pattern, metadata).group(1)
+                result = re.search(field_pattern, metadata)
+                result = "" if result is None else result.group(1)
             except Exception as err:
                 if not self.silent:
                     print(

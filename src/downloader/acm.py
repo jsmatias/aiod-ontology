@@ -24,8 +24,12 @@ def from_doi(doi: str, sub_dir: str = "misc"):
 
     res = requests.get(url, timeout=60)
     if res.ok:
-        with open(path, "wb") as pdf_file:
-            pdf_file.write(res.content)
-        print(">> Ok")
+
+        if b"<!DOCTYPE html>" in res.content:
+            print(">> Html data found, make sure you have access to this paper.")
+        else:
+            with open(path, "wb") as pdf_file:
+                pdf_file.write(res.content)
+            print(">> Ok")
     else:
         print(">> Failed to download the PDF. Status code:", res.status_code)

@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 import fitz
 from pdfminer.pdfparser import PDFParser
@@ -15,7 +16,7 @@ class Paper:
 
     def __init__(
         self,
-        files_path: str,
+        files_path: str | Path,
         file_name: str,
         filename_has_doi: bool = True,
         pattern_to_replace: dict = {},
@@ -25,10 +26,13 @@ class Paper:
         Args:
             files_path: "/path/to/files/"
             file_name: "my-paper.pdf"
-            pattern_to_replace: only used when `from_filename` is set to True.
-                This method will try to replace the keys of the dictionary by their corresponding values
-                on the filename.
-            from_filename: When set to `True` the method will try to find the doi pattern in the filename.
+            filename_has_doi (bool, optional): Whether the file is named with DOI pattern. Defaults to True.
+                When set to `True` the DOI will be extract from the name using the
+                `pattern_to_replace`.
+            pattern_to_replace (dict): Pattern to replace, only used when `from_filename` is set to True.
+                Defaults to {}.
+                e.g.: filename = file_10_1145-3351095_00000000.txt
+                      pattern_to_replace = {'_': '.', '-':'/'}
         """
         assert file_name.split(".")[-1].lower() == "pdf", "Only PDF files are accepted."
 
@@ -38,7 +42,7 @@ class Paper:
         self.silent = silent
         self.file_name = file_name
         self.doi = self._get_doi_from_file_name() if filename_has_doi else ""
-        self.full_path = str(files_path / self.file_name)
+        self.full_path = Path(files_path) / self.file_name
 
         self._pdf_info = [{}]
         self._raw_text = []
@@ -95,7 +99,9 @@ class Paper:
 
     def _extract_keywords_from_pdf_content(self):
         text = "\n".join(self._raw_text[:2])
-        start_pattern = r"(?:Key words and Phrases|KEYWORDS|Key words|Index Terms)[-—\s:]"
+        start_pattern = (
+            r"(?:Key words and Phrases|KEYWORDS|Key words|Index Terms)[-—\s:]"
+        )
         keyword_pattern = r"(.*?)"
         end_pattern = r"(?:[1I]\.?[ \n]Introduction|Introduction|ACM|(?:\w+[ -]){4})"
         keywords_match_pattern = rf"(?si){start_pattern}{keyword_pattern}{end_pattern}"
@@ -197,10 +203,10 @@ class Paper:
         except Exception as exc:
             raise exc
 
-    def get_metadata(self) -> dict:
+    def get_metadata(self) -> None:
         """Gets the metadata from external source via API."""
         if self.doi:
-            metadata = Metadata().get_metadata_from_doi(self.doi)
+            metadata: dict = Metadata().get_metadata_from_doi(self.doi)
 
             if not self.silent:
                 print("Correct DOI? ", self.cross_validate_doi(metadata))
@@ -273,18 +279,17 @@ class Paper:
         text = re.sub(r"(?!\s)\W", "", text).lower().strip()
         self.text = text
 
-    def extract_pdf_info(self) -> list:
+    def extract_pdf_info(self) -> None:
         """
         Extracts the metadata information of the PDF file if available.
         """
-
         fp = open(self.full_path, "rb")
         parser = PDFParser(fp)
         doc = PDFDocument(parser)
         info = doc.info
         self._pdf_info = info
 
-    def extract_pdf_text(self) -> str:
+    def extract_pdf_text(self) -> None:
         """
         Extract the text from the pdf file.
         """
@@ -294,7 +299,7 @@ class Paper:
             pages += [page.get_text()]
         self._raw_text = pages
 
-    def extract_doi(self) -> str:
+    def extract_doi(self) -> None:
         """Extracts DOI"""
         doi_list = []
         if self.filename_has_doi:

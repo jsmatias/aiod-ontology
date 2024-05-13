@@ -44,3 +44,5 @@ def export_ontology(named_list: str):
 
     with open(DATA_PATH / "ontology" / f"{named_list}.ttl", "w") as f:
         f.write(ontology_str)
+
+    print(f"File exported to {DATA_PATH / 'ontology' / named_list}.ttl")
